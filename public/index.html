@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Who The F*** Is My Alderperson?</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+            transform: translateY(0);
+            transition: transform 0.3s ease;
+        }
+
+        .container:hover {
+            transform: translateY(-5px);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.2rem;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1rem;
+            line-height: 1.5;
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+            background: #f8f9fa;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            width: 100%;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .results {
+            margin-top: 30px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            text-align: left;
+            display: none;
+        }
+
+        .results.show {
+            display: block;
+            animation: slideUp 0.5s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .alderperson-info {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            margin-bottom: 15px;
+        }
+
+        .alderperson-name {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .ward-info {
+            color: #666;
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
+
+        .contact-info {
+            background: #e8f2ff;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: #555;
+        }
+
+        .error {
+            background: #ffe6e6;
+            border-left-color: #ff4757;
+            color: #d63031;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 30px 20px;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Who The F*** Is My Alderperson?</h1>
+        <p class="subtitle">Enter your Chicago address to find out who represents you on the City Council</p>
+        
+        <form id="addressForm">
+            <div class="input-group">
+                <label for="address">Your Address:</label>
+                <input 
+                    type="text" 
+                    id="address" 
+                    placeholder="123 N State St, Chicago, IL"
+                    required
+                >
+            </div>
+            <button type="submit" id="submitBtn">
+                Find My Alderperson
+            </button>
+        </form>
+
+        <div id="results" class="results">
+            <!-- Results will be populated here -->
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('addressForm');
+        const addressInput = document.getElementById('address');
+        const submitBtn = document.getElementById('submitBtn');
+        const results = document.getElementById('results');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const address = addressInput.value.trim();
+            if (!address) return;
+
+            // Show loading state
+            submitBtn.disabled = true;
+                            submitBtn.innerHTML = '<div class="loading"><div class="spinner"></div>Looking up your alderperson (this may take 10-15 seconds)...</div>';
+            results.classList.remove('show');
+
+            try {
+                const response = await fetch('/api/lookup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ address })
+                });
+
+                console.log('Response status:', response.status);
+                const data = await response.json();
+                console.log('Response data:', data);
+
+                if (data.success) {
+                    displayResults(data);
+                } else {
+                    displayError(data.error || 'Could not find alderperson information for this address.');
+                }
+            } catch (error) {
+                console.error('Fetch error:', error);
+                displayError('Network error: ' + error.message);
+            }
+
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = 'Find My Alderperson';
+        });
+
+        function displayResults(data) {
+            results.innerHTML = `
+                <div class="alderperson-info">
+                    <div class="alderperson-name">${data.alderperson}</div>
+                    <div class="ward-info">Ward ${data.ward}</div>
+                    <div class="contact-info">
+                        ${data.wardOffice ? `<div><strong>Office:</strong> ${data.wardOffice}</div>` : ''}
+                        ${data.wardPhone ? `<div><strong>Phone:</strong> ${data.wardPhone}</div>` : ''}
+                        ${data.contact && data.contact !== 'Contact information not available' ? `<div><strong>Additional Contact:</strong> ${data.contact}</div>` : ''}
+                    </div>
+                </div>
+            `;
+            results.classList.add('show');
+        }
+
+        function displayError(message) {
+            results.innerHTML = `
+                <div class="alderperson-info error">
+                    <div class="alderperson-name">Oops!</div>
+                    <div class="ward-info">${message}</div>
+                </div>
+            `;
+            results.classList.add('show');
+        }
+
+        // Demo function for preview purposes
+        function displayDemoResults(address) {
+            displayError('Demo mode - server not running. Start the server with "npm start" to use real data.');
+        }
+
+        // Add some nice enter key handling
+        addressInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                form.dispatchEvent(new Event('submit'));
+            }
+        });
+    </script>
+</body>
+</html>
